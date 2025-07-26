@@ -183,3 +183,131 @@
     (ok true)
   )
 )
+
+(define-map image-annotations
+  { study-id: uint, annotation-id: uint }
+  {
+    radiologist-id: principal,
+    annotation-type: (string-ascii 50),
+    coordinates: (string-ascii 100),
+    measurement-value: uint,
+    measurement-unit: (string-ascii 20),
+    annotation-text: (string-ascii 200),
+    confidence-level: uint,
+    annotation-date: uint
+  }
+)
+
+(define-map critical-findings
+  { study-id: uint }
+  {
+    finding-type: (string-ascii 100),
+    severity-level: (string-ascii 20),
+    notification-sent: bool,
+    notification-timestamp: uint,
+    acknowledged-by: principal,
+    acknowledgment-timestamp: uint,
+    follow-up-required: bool
+  }
+)
+
+(define-map peer-reviews
+  { study-id: uint, reviewer-id: principal }
+  {
+    review-type: (string-ascii 30),
+    review-date: uint,
+    agreement-level: (string-ascii 30),
+    discrepancy-notes: (string-ascii 400),
+    learning-points: (string-ascii 300),
+    reviewer-rating: uint
+  }
+)
+
+(define-public (add-image-annotation
+  (study-id uint)
+  (annotation-type (string-ascii 50))
+  (coordinates (string-ascii 100))
+  (measurement-value uint)
+  (measurement-unit (string-ascii 20))
+  (annotation-text (string-ascii 200))
+  (confidence-level uint))
+  (let ((study-data (unwrap! (map-get? imaging-studies { study-id: study-id }) ERR_STUDY_NOT_FOUND))
+        (annotation-id (var-get next-annotation-id)))
+    (asserts! (is-eq tx-sender (get assigned-radiologist study-data)) ERR_NOT_AUTHORIZED)
+    (map-set image-annotations
+      { study-id: study-id, annotation-id: annotation-id }
+      {
+        radiologist-id: tx-sender,
+        annotation-type: annotation-type,
+        coordinates: coordinates,
+        measurement-value: measurement-value,
+        measurement-unit: measurement-unit,
+        annotation-text: annotation-text,
+        confidence-level: confidence-level,
+        annotation-date: block-height
+      }
+    )
+    (var-set next-annotation-id (+ annotation-id u1))
+    (ok annotation-id)
+  )
+)
+
+(define-public (flag-critical-finding
+  (study-id uint)
+  (finding-type (string-ascii 100))
+  (severity-level (string-ascii 20))
+  (follow-up-required bool))
+  (let ((study-data (unwrap! (map-get? imaging-studies { study-id: study-id }) ERR_STUDY_NOT_FOUND)))
+    (asserts! (is-eq tx-sender (get assigned-radiologist study-data)) ERR_NOT_AUTHORIZED)
+    (map-set critical-findings
+      { study-id: study-id }
+      {
+        finding-type: finding-type,
+        severity-level: severity-level,
+        notification-sent: true,
+        notification-timestamp: block-height,
+        acknowledged-by: (get ordering-physician study-data),
+        acknowledgment-timestamp: u0,
+        follow-up-required: follow-up-required
+      }
+    )
+    (ok true)
+  )
+)
+
+(define-public (acknowledge-critical-finding (study-id uint))
+  (let ((critical-data (unwrap! (map-get? critical-findings { study-id: study-id }) ERR_STUDY_NOT_FOUND))
+        (study-data (unwrap! (map-get? imaging-studies { study-id: study-id }) ERR_STUDY_NOT_FOUND)))
+    (asserts! (is-eq tx-sender (get ordering-physician study-data)) ERR_NOT_AUTHORIZED)
+    (map-set critical-findings
+      { study-id: study-id }
+      (merge critical-data { acknowledgment-timestamp: block-height })
+    )
+    (ok true)
+  )
+)
+
+(define-public (conduct-peer-review
+  (study-id uint)
+  (review-type (string-ascii 30))
+  (agreement-level (string-ascii 30))
+  (discrepancy-notes (string-ascii 400))
+  (learning-points (string-ascii 300))
+  (reviewer-rating uint))
+  (let ((study-data (unwrap! (map-get? imaging-studies { study-id: study-id }) ERR_STUDY_NOT_FOUND)))
+    (asserts! (is-some (map-get? radiologist-credentials { radiologist-id: tx-sender })) ERR_INVALID_RADIOLOGIST)
+    (asserts! (not (is-eq tx-sender (get assigned-radiologist study-data))) ERR_NOT_AUTHORIZED)
+    (map-set peer-reviews
+      { study-id: study-id, reviewer-id: tx-sender }
+      {
+        review-type: review-type,
+        review-date: block-height,
+        agreement-level: agreement-level,
+        discrepancy-notes: discrepancy-notes,
+        learning-points: learning-points,
+        reviewer-rating: reviewer-rating
+      }
+    )
+    (ok true)
+  )
+)
