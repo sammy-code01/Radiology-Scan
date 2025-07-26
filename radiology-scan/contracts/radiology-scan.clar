@@ -103,7 +103,7 @@
         ordering-physician: tx-sender,
         study-type: study-type,
         body-part: body-part,
-        study-date: block-height,
+        study-date: stacks-block-height,
         modality: modality,
         contrast-used: contrast-used,
         clinical-indication: clinical-indication,
@@ -146,14 +146,14 @@
       { study-id: study-id }
       {
         radiologist-id: tx-sender,
-        report-date: block-height,
+        report-date: stacks-block-height,
         clinical-history: clinical-history,
         technique: technique,
         findings: findings,
         impression: impression,
         recommendations: recommendations,
         report-status: "preliminary",
-        dictation-timestamp: block-height,
+        dictation-timestamp: stacks-block-height,
         verification-timestamp: u0
       }
     )
@@ -177,7 +177,7 @@
       { study-id: study-id }
       (merge report-data {
         report-status: "final",
-        verification-timestamp: block-height
+        verification-timestamp: stacks-block-height
       })
     )
     (ok true)
@@ -244,7 +244,7 @@
         measurement-unit: measurement-unit,
         annotation-text: annotation-text,
         confidence-level: confidence-level,
-        annotation-date: block-height
+        annotation-date: stacks-block-height
       }
     )
     (var-set next-annotation-id (+ annotation-id u1))
@@ -265,7 +265,7 @@
         finding-type: finding-type,
         severity-level: severity-level,
         notification-sent: true,
-        notification-timestamp: block-height,
+        notification-timestamp: stacks-block-height,
         acknowledged-by: (get ordering-physician study-data),
         acknowledgment-timestamp: u0,
         follow-up-required: follow-up-required
@@ -281,7 +281,7 @@
     (asserts! (is-eq tx-sender (get ordering-physician study-data)) ERR_NOT_AUTHORIZED)
     (map-set critical-findings
       { study-id: study-id }
-      (merge critical-data { acknowledgment-timestamp: block-height })
+      (merge critical-data { acknowledgment-timestamp: stacks-block-height })
     )
     (ok true)
   )
@@ -301,7 +301,7 @@
       { study-id: study-id, reviewer-id: tx-sender }
       {
         review-type: review-type,
-        review-date: block-height,
+        review-date: stacks-block-height,
         agreement-level: agreement-level,
         discrepancy-notes: discrepancy-notes,
         learning-points: learning-points,
