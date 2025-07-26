@@ -311,3 +311,35 @@
     (ok true)
   )
 )
+
+(define-read-only (get-imaging-study (study-id uint))
+  (map-get? imaging-studies { study-id: study-id })
+)
+
+(define-read-only (get-radiology-report (study-id uint))
+  (map-get? radiology-reports { study-id: study-id })
+)
+
+(define-read-only (get-radiologist-credentials (radiologist-id principal))
+  (map-get? radiologist-credentials { radiologist-id: radiologist-id })
+)
+
+(define-read-only (get-image-annotation (study-id uint) (annotation-id uint))
+  (map-get? image-annotations { study-id: study-id, annotation-id: annotation-id })
+)
+
+(define-read-only (get-critical-finding (study-id uint))
+  (map-get? critical-findings { study-id: study-id })
+)
+
+(define-read-only (get-peer-review (study-id uint) (reviewer-id principal))
+  (map-get? peer-reviews { study-id: study-id, reviewer-id: reviewer-id })
+)
+
+(define-read-only (get-next-study-id)
+  (var-get next-study-id)
+)
+
+(define-read-only (get-next-annotation-id)
+  (var-get next-annotation-id)
+)
